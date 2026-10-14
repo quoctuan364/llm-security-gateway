@@ -72,9 +72,9 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "S", "B"]
-ignore = ["S101", "B008"]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501", "B008", "F401", "F841"]

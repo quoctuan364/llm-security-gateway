@@ -1,6 +1,7 @@
-from enum import Enum
 import re
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 from pydantic import BaseModel, Field
 
 from packages.shared.src.models.decision import (

@@ -1,7 +1,8 @@
 import hashlib
+
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
 from apps.api.src.core.config import settings

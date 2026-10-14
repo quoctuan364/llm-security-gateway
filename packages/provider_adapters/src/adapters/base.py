@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import AsyncIterator, Dict, Any
+from typing import Any, AsyncIterator, Dict
+
 from packages.shared.src.models.schemas import (
     ChatCompletionRequest,
     ChatCompletionResponse,

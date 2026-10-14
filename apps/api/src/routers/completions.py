@@ -1,6 +1,7 @@
 import json
 import time
 from typing import Optional
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -214,7 +215,7 @@ async def chat_completions(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Downstream LLM provider error: {str(exc)}",
-        )
+        ) from exc
 
     # 7. Egress Inspection on Output Text
     output_text = ""

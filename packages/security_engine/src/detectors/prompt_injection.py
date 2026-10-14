@@ -1,5 +1,6 @@
 import re
 from typing import List, Tuple
+
 from packages.shared.src.models.decision import (
     DetectionCategory,
     DetectionDetail,
