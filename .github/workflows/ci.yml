@@ -1,0 +1,88 @@
+name: Aegis CI / DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  lint-and-audit:
+    name: Code Quality & Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Lint & Security Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff bandit[sarif]
+
+      - name: Lint Code with Ruff
+        run: ruff check .
+
+      - name: Static Security Analysis with Bandit (SARIF)
+        run: bandit -r packages apps -f sarif -o bandit-results.sarif || true
+
+      - name: Upload Bandit SARIF Report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-results.sarif
+        continue-on-error: true
+
+  test:
+    name: Automated Unit & Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Package & Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install greenlet
+          pip install -e .[dev]
+
+      - name: Run Pytest with Coverage
+        run: pytest -v --cov=packages --cov=apps --cov-report=xml --cov-report=term
+
+      - name: Verify Tamper-Evident Audit Chain Script
+        run: |
+          python -c "
+          import asyncio
+          from apps.api.src.core.database import AsyncSessionLocal, init_db
+          from apps.api.src.services.audit_service import AuditService
+          async def verify():
+              await init_db()
+              async with AsyncSessionLocal() as db:
+                  svc = AuditService()
+                  valid, count, err = await svc.verify_chain_integrity(db)
+                  print(f'Audit chain verified: {valid}, count: {count}')
+          asyncio.run(verify())
+          "

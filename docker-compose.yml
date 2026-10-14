@@ -1,0 +1,58 @@
+services:
+  gateway-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aegis-gateway-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://aegis_user:aegis_secret_password@postgres:5432/aegis_db
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_ENABLED=true
+      - PROVIDER_MODE=mock
+      - ADMIN_API_KEY=aegis_admin_secret_super_secure_key_123
+      - AUDIT_HMAC_SECRET=aegis_hmac_secret_for_audit_log_tamper_evidence
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: aegis-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=aegis_user
+      - POSTGRES_PASSWORD=aegis_secret_password
+      - POSTGRES_DB=aegis_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis_user -d aegis_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: aegis-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  redisdata:
